@@ -5,11 +5,12 @@ project(Raymarcher_Vulkan)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
-include_directories(external src)
+include_directories(external src src/core)
 
 add_executable(Raymarcher
     src/main.cpp
     src/mainLoop.cpp
+    src/core/setup.cpp
     external/window_handling.cpp
 )
 
