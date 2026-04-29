@@ -1,6 +1,7 @@
 #pragma once
 
 // add header files
+#include "setup.hpp"
 #include "window_handling.hpp"
 
 namespace miniEngine {
@@ -13,5 +14,6 @@ public:
 
 private:
   WindowHandling createWindow{WIDTH, HEIGHT, "Raymarcher Grapher"};
+  SetupDevice device{};
 };
 } // namespace miniEngine
