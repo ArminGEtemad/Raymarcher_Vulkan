@@ -26,10 +26,18 @@ public:
 private:
   // initializations
   VkInstance instance;
-  void createInstance();
-
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  VkPhysicalDeviceProperties properties;
+  VkPhysicalDeviceFeatures deviceFeatures;
+
+  // functions
+  void createInstance();
+  void pickPhysicalDevice();
+
+  // device suiability
+  bool isDeviceSuitable(VkPhysicalDevice device);
 
   // validation layer
   bool checkValidationLayerSupport();
