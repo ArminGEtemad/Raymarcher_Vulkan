@@ -14,8 +14,12 @@ namespace miniEngine {
 // queue family
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
-  bool isComplete() { return graphicsFamily.has_value(); }
+  std::optional<uint32_t> presentFamily;
+  bool isComplete() {
+    return graphicsFamily.has_value() && presentFamily.has_value();
+  }
 };
+
 class SetupDevice {
 public:
 // macro for validation layer
@@ -25,7 +29,7 @@ public:
   const bool enableValidationLayers = true; // for testings
 #endif
 
-  SetupDevice();
+  SetupDevice(WindowHandling &window);
   ~SetupDevice();
 
   SetupDevice(const SetupDevice &) = delete;
@@ -34,6 +38,7 @@ public:
 private:
   // initializations
   VkInstance instance;
+  VkSurfaceKHR surface;
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -41,9 +46,12 @@ private:
   VkPhysicalDeviceFeatures deviceFeatures;
   VkDevice device;
   VkQueue graphicsQueue;
+  VkQueue presentQueue;
+  WindowHandling &window;
 
   // functions
   void createInstance();
+  void createSurface();
   void pickPhysicalDevice();
   void createLogicalDevice();
 
