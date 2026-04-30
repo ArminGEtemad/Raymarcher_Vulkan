@@ -5,9 +5,17 @@
 #include <vulkan/vulkan.h>
 
 // add libraries
+#include <cstdint>
+#include <optional>
 #include <vector>
 
 namespace miniEngine {
+
+// queue family
+struct QueueFamilyIndices {
+  std::optional<uint32_t> graphicsFamily;
+  bool isComplete() { return graphicsFamily.has_value(); }
+};
 class SetupDevice {
 public:
 // macro for validation layer
@@ -36,8 +44,12 @@ private:
   void createInstance();
   void pickPhysicalDevice();
 
+  // -- helper functions --
   // device suiability
   bool isDeviceSuitable(VkPhysicalDevice device);
+
+  // queue family
+  QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
   // validation layer
   bool checkValidationLayerSupport();
