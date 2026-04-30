@@ -39,10 +39,13 @@ private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkPhysicalDeviceProperties properties;
   VkPhysicalDeviceFeatures deviceFeatures;
+  VkDevice device;
+  VkQueue graphicsQueue;
 
   // functions
   void createInstance();
   void pickPhysicalDevice();
+  void createLogicalDevice();
 
   // -- helper functions --
   // device suiability
