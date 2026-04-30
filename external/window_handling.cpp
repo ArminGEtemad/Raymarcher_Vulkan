@@ -32,4 +32,11 @@ void WindowHandling::initWindow() {
     throw std::runtime_error("Failed to create GLFW window");
   }
 }
+void WindowHandling::createWindowSurface(VkInstance instance,
+                                         VkSurfaceKHR *surface) {
+  if (glfwCreateWindowSurface(instance, window, nullptr, surface) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create a surface");
+  }
+}
 }; // namespace miniEngine

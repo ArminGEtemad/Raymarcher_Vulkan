@@ -4,6 +4,7 @@
 // add libraries
 #include <GLFW/glfw3.h>
 #include <string>
+#include <vulkan/vulkan.h>
 
 namespace miniEngine {
 class WindowHandling {
@@ -16,6 +17,7 @@ public:
   WindowHandling &operator=(const WindowHandling &) = delete;
 
   bool shouldClose() { return glfwWindowShouldClose(window); }
+  void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
 
 private:
   // window sizes
