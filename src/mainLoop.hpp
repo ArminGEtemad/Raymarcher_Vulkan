@@ -10,10 +10,16 @@ public:
   static constexpr int WIDTH = 1000;
   static constexpr int HEIGHT = 800;
 
+  makeApp();
+  ~makeApp();
+
+  makeApp(const makeApp &) = delete;
+  makeApp &operator=(const makeApp &) = delete;
+
   void run();
 
 private:
   WindowHandling createWindow{WIDTH, HEIGHT, "Raymarcher Grapher"};
-  SetupDevice device{};
+  SetupDevice device{createWindow};
 };
 } // namespace miniEngine
