@@ -39,4 +39,7 @@ void WindowHandling::createWindowSurface(VkInstance instance,
     throw std::runtime_error("failed to create a surface");
   }
 }
-}; // namespace miniEngine
+void WindowHandling::getFramebufferSize(int *width, int *height) {
+  glfwGetFramebufferSize(window, width, height);
+}
+} // namespace miniEngine
