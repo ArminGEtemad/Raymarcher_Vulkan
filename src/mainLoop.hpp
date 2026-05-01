@@ -2,6 +2,7 @@
 
 // add header files
 #include "setup.hpp"
+#include "swapchain.hpp"
 #include "window_handling.hpp"
 
 namespace miniEngine {
@@ -21,5 +22,6 @@ public:
 private:
   WindowHandling createWindow{WIDTH, HEIGHT, "Raymarcher Grapher"};
   SetupDevice device{createWindow};
+  SwapChainEngine swapChain{createWindow, device};
 };
 } // namespace miniEngine
