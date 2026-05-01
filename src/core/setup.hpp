@@ -20,6 +20,13 @@ struct QueueFamilyIndices {
   }
 };
 
+// Querying details of swap chain support
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+};
+
 class SetupDevice {
 public:
 // macro for validation layer
@@ -35,16 +42,26 @@ public:
   SetupDevice(const SetupDevice &) = delete;
   SetupDevice &operator=(const SetupDevice &) = delete;
 
+  // needed for swap chain files to be accessed
+  SwapChainSupportDetails getSwapChainSupport() {
+    return querySwapChainSupport(physicalDevice);
+  }
+  VkSurfaceKHR surface() { return surface_; }
+  VkDevice device() { return device_; }
+  QueueFamilyIndices findPhysicalQueueFamilies() {
+    return findQueueFamilies(physicalDevice);
+  }
+
 private:
   // initializations
   VkInstance instance;
-  VkSurfaceKHR surface;
+  VkSurfaceKHR surface_;
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkPhysicalDeviceProperties properties;
   VkPhysicalDeviceFeatures deviceFeatures;
-  VkDevice device;
+  VkDevice device_;
   VkQueue graphicsQueue;
   VkQueue presentQueue;
   WindowHandling &window;
@@ -62,6 +79,9 @@ private:
   // queue family
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
+  // swap chain support check
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
   // validation layer
   bool checkValidationLayerSupport();
   void setupDebugMessenger();
@@ -72,5 +92,8 @@ private:
   // extension checkers
   std::vector<const char *> getRequiredExtensions();
   void hasInstanceExtension();
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+  const std::vector<const char *> deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 };
 } // namespace miniEngine
