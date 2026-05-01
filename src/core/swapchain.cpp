@@ -18,10 +18,16 @@ SwapChainEngine::SwapChainEngine(WindowHandling &window, SetupDevice &device)
   init();
 }
 SwapChainEngine::~SwapChainEngine() {
+  for (auto imageView : swapChainImageViews) {
+    vkDestroyImageView(device.device(), imageView, nullptr);
+  }
   vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
 }
 
-void SwapChainEngine::init() { createSwapChain(); }
+void SwapChainEngine::init() {
+  createSwapChain();
+  createImageViews();
+}
 
 void SwapChainEngine::createSwapChain() {
   SwapChainSupportDetails swapChainSupport = device.getSwapChainSupport();
@@ -71,7 +77,7 @@ void SwapChainEngine::createSwapChain() {
 
   if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) !=
       VK_SUCCESS) {
-    throw std::runtime_error("failed to create swap chain!");
+    throw std::runtime_error("failed to create swap chain");
   }
 
   vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, nullptr);
@@ -132,6 +138,27 @@ VkExtent2D SwapChainEngine::chooseSwapExtent(
                    capabilities.maxImageExtent.height);
 
     return actualExtent;
+  }
+}
+
+void SwapChainEngine::createImageViews() {
+  swapChainImageViews.resize(swapChainImages.size());
+  for (size_t i = 0; i < swapChainImages.size(); i++) {
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = swapChainImages[i];
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = swapChainImageFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(device.device(), &viewInfo, nullptr,
+                          &swapChainImageViews[i]) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create swap chain image view");
+    }
   }
 }
 
