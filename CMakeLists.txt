@@ -13,6 +13,7 @@ add_executable(Raymarcher
     src/main.cpp
     src/mainLoop.cpp
     src/core/setup.cpp
+    src/core/swapchain.cpp
     external/window_handling.cpp
 )
 
