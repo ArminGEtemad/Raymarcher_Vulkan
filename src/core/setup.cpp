@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 // add libraries
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <optional>
@@ -145,15 +146,29 @@ void SetupDevice::createLogicalDevice() {
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
-  VkPhysicalDeviceFeatures deviceFeatures{};
-  deviceFeatures.samplerAnisotropy = VK_TRUE;
+  VkPhysicalDeviceVulkan13Features features13{};
+  features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+  features13.dynamicRendering = VK_TRUE;
+
+  VkPhysicalDeviceVulkan12Features features12{};
+  features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  features12.bufferDeviceAddress = VK_TRUE;
+  features12.pNext = &features13;
+
+  VkPhysicalDeviceFeatures2 deviceFeatures2{};
+  deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
+  deviceFeatures2.pNext = &features12;
 
   VkDeviceCreateInfo createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   createInfo.pQueueCreateInfos = queueCreateInfos.data();
   createInfo.queueCreateInfoCount =
       static_cast<uint32_t>(queueCreateInfos.size());
-  createInfo.pEnabledFeatures = &deviceFeatures;
+
+  // Use the pNext chain instead of pEnabledFeatures
+  createInfo.pNext = &deviceFeatures2;
+  createInfo.pEnabledFeatures = nullptr;
 
   createInfo.enabledExtensionCount =
       static_cast<uint32_t>(deviceExtensions.size());
