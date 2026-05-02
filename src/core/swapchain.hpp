@@ -17,6 +17,12 @@ public:
   SwapChainEngine(const SwapChainEngine &) = delete;
   SwapChainEngine &operator=(const SwapChainEngine &) = delete;
 
+  VkFormat getFormat() { return swapChainImageFormat; }
+  VkExtent2D getExtent() { return swapChainExtent; }
+  VkImageView getImageView(int index) { return swapChainImageViews[index]; }
+  VkImage getImage(int index) { return swapChainImages[index]; }
+  VkSwapchainKHR getSwapChain() { return swapChain; }
+
 private:
   // initializations
   WindowHandling &window;
