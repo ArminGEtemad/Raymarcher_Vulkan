@@ -46,8 +46,8 @@ public:
   SwapChainSupportDetails getSwapChainSupport() {
     return querySwapChainSupport(physicalDevice);
   }
-  VkSurfaceKHR surface() { return surface_; }
-  VkDevice device() { return device_; }
+  VkSurfaceKHR getSurface() { return surface; }
+  VkDevice getDevice() { return device; }
   QueueFamilyIndices findPhysicalQueueFamilies() {
     return findQueueFamilies(physicalDevice);
   }
@@ -58,13 +58,13 @@ public:
 private:
   // initializations
   VkInstance instance;
-  VkSurfaceKHR surface_;
+  VkSurfaceKHR surface;
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkPhysicalDeviceProperties properties;
   VkPhysicalDeviceFeatures deviceFeatures;
-  VkDevice device_;
+  VkDevice device;
   VkQueue graphicsQueue;
   VkQueue presentQueue;
   WindowHandling &window;

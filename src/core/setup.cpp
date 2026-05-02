@@ -56,12 +56,12 @@ SetupDevice::SetupDevice(WindowHandling &window) : window{window} {
 }
 
 SetupDevice::~SetupDevice() {
-  vkDestroyCommandPool(device_, commandPool, nullptr);
-  vkDestroyDevice(device_, nullptr);
+  vkDestroyCommandPool(device, commandPool, nullptr);
+  vkDestroyDevice(device, nullptr);
   if (enableValidationLayers) {
     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
   }
-  vkDestroySurfaceKHR(instance, surface_, nullptr);
+  vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyInstance(instance, nullptr);
 }
 
@@ -184,17 +184,17 @@ void SetupDevice::createLogicalDevice() {
     createInfo.enabledLayerCount = 0;
   }
 
-  if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_) !=
+  if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) !=
       VK_SUCCESS) {
     throw std::runtime_error("failed to create logical device!");
   }
 
-  vkGetDeviceQueue(device_, indices.graphicsFamily.value(), 0, &graphicsQueue);
-  vkGetDeviceQueue(device_, indices.presentFamily.value(), 0, &presentQueue);
+  vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+  vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
 void SetupDevice::createSurface() {
-  window.createWindowSurface(instance, &surface_);
+  window.createWindowSurface(instance, &surface);
 }
 
 QueueFamilyIndices SetupDevice::findQueueFamilies(VkPhysicalDevice device) {
@@ -213,7 +213,7 @@ QueueFamilyIndices SetupDevice::findQueueFamilies(VkPhysicalDevice device) {
       indices.graphicsFamily = i;
     }
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface_, &presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
     if (presentSupport) {
       indices.presentFamily = i;
     }
@@ -233,7 +233,7 @@ void SetupDevice::createCommandPool() {
   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-  if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool) !=
+  if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
       VK_SUCCESS) {
     throw std::runtime_error("failed to create command pool!");
   }
@@ -245,28 +245,28 @@ SwapChainSupportDetails
 SetupDevice::querySwapChainSupport(VkPhysicalDevice device) {
   // details
   SwapChainSupportDetails details;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_,
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
                                             &details.capabilities);
 
   // format
   uint32_t formatCount;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
   if (formatCount != 0) {
     details.formats.resize(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
                                          details.formats.data());
   }
 
   // present mode
   uint32_t presentModeCount;
-  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount,
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount,
                                             nullptr);
 
   if (presentModeCount != 0) {
     details.presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        device, surface_, &presentModeCount, details.presentModes.data());
+        device, surface, &presentModeCount, details.presentModes.data());
   }
 
   return details;

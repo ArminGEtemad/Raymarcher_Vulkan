@@ -12,10 +12,10 @@ PipelineEngine::PipelineEngine(SetupDevice &device,
   createGraphicsPipeline(configInfo);
 }
 PipelineEngine::~PipelineEngine() {
-  vkDestroyPipeline(device.device(), graphicsPipeline, nullptr);
-  vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
-  vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
-  vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+  vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
+  vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);
+  vkDestroyShaderModule(device.getDevice(), fragShaderModule, nullptr);
+  vkDestroyShaderModule(device.getDevice(), vertShaderModule, nullptr);
 }
 
 std::vector<char> PipelineEngine::readFile(const std::string &filename) {
@@ -48,7 +48,7 @@ void PipelineEngine::createGraphicsPipeline(
   pipelineLayoutInfo.pSetLayouts = nullptr;
   pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-  if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr,
+  if (vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr,
                              &pipelineLayout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout");
   }
@@ -99,7 +99,7 @@ void PipelineEngine::createGraphicsPipeline(
   pipelineInfo.layout = pipelineLayout;
   pipelineInfo.renderPass = VK_NULL_HANDLE;
 
-  if (vkCreateGraphicsPipelines(device.device(), VK_NULL_HANDLE, 1,
+  if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1,
                                 &pipelineInfo, nullptr,
                                 &graphicsPipeline) != VK_SUCCESS) {
     throw std::runtime_error("failed to create graphics pipeline");
@@ -113,7 +113,7 @@ PipelineEngine::createShaderModule(const std::vector<char> &code) {
   createInfo.codeSize = code.size();
   createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
   VkShaderModule shaderModule;
-  if (vkCreateShaderModule(device.device(), &createInfo, nullptr,
+  if (vkCreateShaderModule(device.getDevice(), &createInfo, nullptr,
                            &shaderModule) != VK_SUCCESS) {
     throw std::runtime_error("failed to create shader module");
   }

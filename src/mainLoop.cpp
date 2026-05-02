@@ -17,9 +17,9 @@ makeApp::makeApp() {
   createSyncObjects();
 }
 makeApp::~makeApp() {
-  vkDestroySemaphore(device.device(), renderFinishedSemaphore, nullptr);
-  vkDestroySemaphore(device.device(), imageAvailableSemaphore, nullptr);
-  vkDestroyFence(device.device(), inFlightFence, nullptr);
+  vkDestroySemaphore(device.getDevice(), renderFinishedSemaphore, nullptr);
+  vkDestroySemaphore(device.getDevice(), imageAvailableSemaphore, nullptr);
+  vkDestroyFence(device.getDevice(), inFlightFence, nullptr);
 }
 
 void makeApp::run() {
@@ -27,7 +27,7 @@ void makeApp::run() {
     glfwPollEvents();
     drawFrame();
   }
-  vkDeviceWaitIdle(device.device());
+  vkDeviceWaitIdle(device.getDevice());
 }
 
 void makeApp::allocateCommandBuffer() {
@@ -37,8 +37,8 @@ void makeApp::allocateCommandBuffer() {
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocInfo.commandBufferCount = 1;
 
-  if (vkAllocateCommandBuffers(device.device(), &allocInfo, &commandBuffer) !=
-      VK_SUCCESS) {
+  if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo,
+                               &commandBuffer) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
 }
@@ -52,21 +52,22 @@ void makeApp::createSyncObjects() {
   fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // Start signaled so first
                                                   // frame doesn't wait forever
 
-  vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
+  vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
                     &imageAvailableSemaphore);
-  vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
+  vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
                     &renderFinishedSemaphore);
-  vkCreateFence(device.device(), &fenceInfo, nullptr, &inFlightFence);
+  vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFence);
 }
 
 void makeApp::drawFrame() {
   // Wait for the GPU to finish the previous frame
-  vkWaitForFences(device.device(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(device.device(), 1, &inFlightFence);
+  vkWaitForFences(device.getDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+  vkResetFences(device.getDevice(), 1, &inFlightFence);
 
   uint32_t imageIndex;
-  vkAcquireNextImageKHR(device.device(), swapChain.getSwapChain(), UINT64_MAX,
-                        imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+  vkAcquireNextImageKHR(device.getDevice(), swapChain.getSwapChain(),
+                        UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE,
+                        &imageIndex);
 
   vkResetCommandBuffer(commandBuffer, 0);
 

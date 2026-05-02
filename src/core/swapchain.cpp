@@ -19,9 +19,9 @@ SwapChainEngine::SwapChainEngine(WindowHandling &window, SetupDevice &device)
 }
 SwapChainEngine::~SwapChainEngine() {
   for (auto imageView : swapChainImageViews) {
-    vkDestroyImageView(device.device(), imageView, nullptr);
+    vkDestroyImageView(device.getDevice(), imageView, nullptr);
   }
-  vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
+  vkDestroySwapchainKHR(device.getDevice(), swapChain, nullptr);
 }
 
 void SwapChainEngine::init() {
@@ -46,7 +46,7 @@ void SwapChainEngine::createSwapChain() {
 
   VkSwapchainCreateInfoKHR createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  createInfo.surface = device.surface();
+  createInfo.surface = device.getSurface();
   createInfo.minImageCount = imageCount;
   createInfo.imageFormat = surfaceFormat.format;
   createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -75,14 +75,14 @@ void SwapChainEngine::createSwapChain() {
 
   createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-  if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) !=
-      VK_SUCCESS) {
+  if (vkCreateSwapchainKHR(device.getDevice(), &createInfo, nullptr,
+                           &swapChain) != VK_SUCCESS) {
     throw std::runtime_error("failed to create swap chain");
   }
 
-  vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, nullptr);
+  vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount, nullptr);
   swapChainImages.resize(imageCount);
-  vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount,
+  vkGetSwapchainImagesKHR(device.getDevice(), swapChain, &imageCount,
                           swapChainImages.data());
 
   swapChainImageFormat = surfaceFormat.format;
@@ -155,7 +155,7 @@ void SwapChainEngine::createImageViews() {
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device.device(), &viewInfo, nullptr,
+    if (vkCreateImageView(device.getDevice(), &viewInfo, nullptr,
                           &swapChainImageViews[i]) != VK_SUCCESS) {
       throw std::runtime_error("failed to create swap chain image view");
     }
