@@ -76,20 +76,20 @@ void makeApp::drawFrame() {
   vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
   // --- Dynamic Rendering Transition ---
-  VkRenderingAttachmentInfo colorAttachment{
-      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-      .imageView = swapChain.getImageView(imageIndex),
-      .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-      .clearValue = {{{0.01f, 0.01f, 0.1f, 1.0f}}} // Dark blue-ish
-  };
+  VkRenderingAttachmentInfo colorAttachment{};
+  colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+  colorAttachment.imageView = swapChain.getImageView(imageIndex);
+  colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.clearValue = {{{0.01f, 0.01f, 0.1f, 1.0f}}}; // Dark blue-ish
 
-  VkRenderingInfo renderingInfo{.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-                                .renderArea = {{0, 0}, swapChain.getExtent()},
-                                .layerCount = 1,
-                                .colorAttachmentCount = 1,
-                                .pColorAttachments = &colorAttachment};
+  VkRenderingInfo renderingInfo{};
+  renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+  renderingInfo.renderArea = {{0, 0}, swapChain.getExtent()};
+  renderingInfo.layerCount = 1;
+  renderingInfo.colorAttachmentCount = 1;
+  renderingInfo.pColorAttachments = &colorAttachment;
 
   // Transition image layout manually for Dynamic Rendering
   VkImageMemoryBarrier barrier{};
@@ -145,7 +145,9 @@ void makeApp::drawFrame() {
   vkEndCommandBuffer(commandBuffer);
 
   // --- Submit to Queue ---
-  VkSubmitInfo submitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
   VkPipelineStageFlags waitStages[] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
@@ -159,7 +161,8 @@ void makeApp::drawFrame() {
   vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFence);
 
   // --- Present to Screen ---
-  VkPresentInfoKHR presentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+  VkPresentInfoKHR presentInfo{};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   presentInfo.waitSemaphoreCount = 1;
   presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
   VkSwapchainKHR swapChains[] = {swapChain.getSwapChain()};
