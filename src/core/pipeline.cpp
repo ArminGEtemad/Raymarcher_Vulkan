@@ -36,8 +36,8 @@ std::vector<char> PipelineEngine::readFile(const std::string &filename) {
 
 void PipelineEngine::createGraphicsPipeline(
     const PipelineConfigInfo &configInfo) {
-  auto vertShaderCode = readFile("shaders/fullscreen.spv");
-  auto fragShaderCode = readFile("shaders/raymarch.spv");
+  auto vertShaderCode = readFile("build/shaders/fullscreen.vert.spv");
+  auto fragShaderCode = readFile("build/shaders/raymarch.frag.spv");
   vertShaderModule = createShaderModule(vertShaderCode);
   fragShaderModule = createShaderModule(fragShaderCode);
 
