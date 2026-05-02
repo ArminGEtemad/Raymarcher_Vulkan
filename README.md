@@ -25,7 +25,7 @@ In this project, I am not going to build my own parser and to keep the version 1
 
 ### First Focus
 
-- [ ] Basic Vulkan setup
-- [ ] Bufferless Full-Screen Triangle Pipeline
+- [x] Basic Vulkan setup
+- [x] Bufferless Full-Screen Triangle Pipeline
 - [ ] Basic Raymarcher Prototype
 - [ ] Camera Setup
