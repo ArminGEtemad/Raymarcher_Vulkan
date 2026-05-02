@@ -5,6 +5,8 @@
 
 namespace miniEngine {
 struct PipelineConfigInfo {
+  PipelineConfigInfo() = default;
+
   PipelineConfigInfo(const PipelineConfigInfo &) = delete;
   PipelineConfigInfo &operator=(const PipelineConfigInfo &) = delete;
 
@@ -29,6 +31,7 @@ public:
   PipelineEngine &operator=(const PipelineEngine &) = delete;
 
   static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
+  VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
 
 private:
   SetupDevice &device;
