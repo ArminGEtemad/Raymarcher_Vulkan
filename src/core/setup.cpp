@@ -52,9 +52,11 @@ SetupDevice::SetupDevice(WindowHandling &window) : window{window} {
   createSurface();
   pickPhysicalDevice();
   createLogicalDevice();
+  createCommandPool();
 }
 
 SetupDevice::~SetupDevice() {
+  vkDestroyCommandPool(device_, commandPool, nullptr);
   vkDestroyDevice(device_, nullptr);
   if (enableValidationLayers) {
     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -166,7 +168,6 @@ void SetupDevice::createLogicalDevice() {
   createInfo.queueCreateInfoCount =
       static_cast<uint32_t>(queueCreateInfos.size());
 
-  // Use the pNext chain instead of pEnabledFeatures
   createInfo.pNext = &deviceFeatures2;
   createInfo.pEnabledFeatures = nullptr;
 
@@ -224,6 +225,22 @@ QueueFamilyIndices SetupDevice::findQueueFamilies(VkPhysicalDevice device) {
   return indices;
 }
 
+void SetupDevice::createCommandPool() {
+  QueueFamilyIndices queueFamilyIndices = findPhysicalQueueFamilies();
+
+  VkCommandPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+  if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool) !=
+      VK_SUCCESS) {
+    throw std::runtime_error("failed to create command pool!");
+  }
+}
+
+// ----- Support, suitability, extensions and validation -----
+
 SwapChainSupportDetails
 SetupDevice::querySwapChainSupport(VkPhysicalDevice device) {
   // details
@@ -254,8 +271,6 @@ SetupDevice::querySwapChainSupport(VkPhysicalDevice device) {
 
   return details;
 }
-
-// ----- Support, suitability, extensions and validation -----
 
 bool SetupDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   uint32_t extensionCount;
