@@ -51,6 +51,9 @@ public:
   QueueFamilyIndices findPhysicalQueueFamilies() {
     return findQueueFamilies(physicalDevice);
   }
+  VkCommandPool getCommandPool() { return commandPool; }
+  VkQueue getGraphicsQueue() { return graphicsQueue; }
+  VkQueue getPresentQueue() { return presentQueue; }
 
 private:
   // initializations
@@ -65,12 +68,14 @@ private:
   VkQueue graphicsQueue;
   VkQueue presentQueue;
   WindowHandling &window;
+  VkCommandPool commandPool;
 
   // functions
   void createInstance();
   void createSurface();
   void pickPhysicalDevice();
   void createLogicalDevice();
+  void createCommandPool();
 
   // -- helper functions --
   // device suiability
