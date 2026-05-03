@@ -19,6 +19,7 @@ public:
   bool shouldClose() { return glfwWindowShouldClose(window); }
   void createWindowSurface(VkInstance instance, VkSurfaceKHR *surface);
   void getFramebufferSize(int *width, int *height);
+  GLFWwindow *getGLFWwindow() { return window; }
 
 private:
   // window sizes

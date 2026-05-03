@@ -2,8 +2,17 @@
 
 // add header files
 #include "setup.hpp"
+#include <glm/glm.hpp>
 
 namespace miniEngine {
+// camera position to be pushed into the gpu
+struct alignas(16) CameraPushConstants {
+  glm::vec3 position;
+  float pad0 = 0.0;
+  glm::vec3 target;
+  float pad1 = 0.0;
+};
+
 struct PipelineConfigInfo {
   PipelineConfigInfo() = default;
 
@@ -32,6 +41,7 @@ public:
 
   static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
   VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
+  VkPipelineLayout getPiplineLayout() { return pipelineLayout; }
 
 private:
   SetupDevice &device;

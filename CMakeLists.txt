@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
-include_directories(external src src/core)
+include_directories(external src src/core mechanics)
 
 add_executable(Raymarcher
     src/main.cpp
@@ -16,6 +16,7 @@ add_executable(Raymarcher
     src/core/swapchain.cpp
     src/core/pipeline.cpp
     external/window_handling.cpp
+    mechanics/cameraLogic.cpp
 )
 
 find_program(GLSLANG_VALIDATOR NAMES glslangValidator)

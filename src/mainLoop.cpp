@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include <stdexcept>
+#include <vulkan/vulkan_core.h>
 namespace miniEngine {
 
 makeApp::makeApp() {
@@ -25,6 +26,7 @@ makeApp::~makeApp() {
 void makeApp::run() {
   while (!createWindow.shouldClose()) {
     glfwPollEvents();
+    camera.update(createWindow);
     drawFrame();
   }
   vkDeviceWaitIdle(device.getDevice());
@@ -129,6 +131,11 @@ void makeApp::drawFrame() {
   scissor.offset = {0, 0};
   scissor.extent = swapChain.getExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+  auto pushConstants = camera.getCameraPushConstants();
+  vkCmdPushConstants(commandBuffer, pipeline->getPiplineLayout(),
+                     VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                     sizeof(CameraPushConstants), &pushConstants);
   vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
   vkCmdEndRendering(commandBuffer);
