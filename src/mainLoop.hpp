@@ -1,6 +1,7 @@
 #pragma once
 
 // add header files
+#include "cameraLogic.hpp"
 #include "pipeline.hpp"
 #include "setup.hpp"
 #include "swapchain.hpp"
@@ -34,6 +35,9 @@ private:
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
+
+  // camera
+  CameraLogic camera;
 
   // functions
   void createSyncObjects();
