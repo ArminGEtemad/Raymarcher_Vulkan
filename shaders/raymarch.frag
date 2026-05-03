@@ -8,14 +8,23 @@ const float EPS = 0.01;
 const int MAX_STEPS = 128;
 const float SURFACE_DIST = 0.001;
 const float MAX_DIST = 100.0;
+const vec3 ZERO_VECTOR = vec3(0.0);
+const vec3 WORLD_UP = vec3(0.0, -1.0, 0.0);
+const float AXIS_THINKNESS = 0.1;
+
+// camera
+layout(push_constant) uniform CameraData {
+    vec3 position;
+} camera;
 
 // helper functions
 float get_dist(vec3 p) {
-    float sphere_radius = 1.0;
-    vec3 sphere_center = vec3(0.0, 0.0, 0.0);
+    float x = length(p.yz) - AXIS_THINKNESS;
+    float y = length(p.xz) - AXIS_THINKNESS;
+    float z = length(p.xy) - AXIS_THINKNESS;
 
-    // distance function for sphere
-    return length(p - sphere_center) - sphere_radius;
+    float axis = min(x, min(y, z));
+    return axis;
 }
 
 vec3 calc_norm(vec3 p) {
@@ -33,8 +42,15 @@ void main() {
     float screen_ratio = fwidth(vertUv.y) / fwidth(vertUv.x);
     vec2 xy = (vertUv * 2.0 - 1.0) * vec2(screen_ratio, 1.0);
 
-    vec3 r_o = vec3(0.0, 0.0, -3.0); // ray origin
-    vec3 r_d = normalize(vec3(xy, 1.0)); // ray direction
+    
+    vec3 cameraForward = normalize(ZERO_VECTOR - camera.position);
+    vec3 cameraRight = normalize(cross(cameraForward, WORLD_UP));
+    vec3 cameraUp = cross(cameraRight, cameraForward);
+
+    vec3 r_o = camera.position;
+    vec3 r_d = normalize(
+        cameraRight * xy.x + cameraUp * xy.y + cameraForward
+    ); // ray direction
 
     // Raymarching loop
     float d_o = 0.0; 
@@ -61,7 +77,7 @@ void main() {
         vec3 n = calc_norm(p);
 
         // Lambertian diffusion
-        vec3 light_position = vec3(4.0, 4.0, -5.0);
+        vec3 light_position = vec3(4.0, 4.0, 5.0);
         vec3 l = normalize(light_position - p);
         float diffuse = max(dot(n, l), 0.0);
         
