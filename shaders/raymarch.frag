@@ -15,6 +15,7 @@ const float AXIS_THINKNESS = 0.1;
 // camera
 layout(push_constant) uniform CameraData {
     vec3 position;
+    vec3 target;
 } camera;
 
 // helper functions
@@ -43,7 +44,7 @@ void main() {
     vec2 xy = (vertUv * 2.0 - 1.0) * vec2(screen_ratio, 1.0);
 
     
-    vec3 cameraForward = normalize(ZERO_VECTOR - camera.position);
+    vec3 cameraForward = normalize(camera.target - camera.position);
     vec3 cameraRight = normalize(cross(cameraForward, WORLD_UP));
     vec3 cameraUp = cross(cameraRight, cameraForward);
 
