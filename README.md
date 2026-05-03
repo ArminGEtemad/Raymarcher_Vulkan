@@ -28,4 +28,4 @@ In this project, I am not going to build my own parser and to keep the version 1
 - [x] Basic Vulkan setup
 - [x] Bufferless Full-Screen Triangle Pipeline
 - [x] Basic Raymarcher Prototype
-- [ ] Camera Setup
+- [x] Camera Setup
