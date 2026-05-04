@@ -21,7 +21,7 @@ In this project, I am not going to build my own parser and to keep the version 1
 
 - [x] Porting Implicit SDF Math from WGPU
 - [x] Volumetric Cone Integration
-- [ ] Add dynamical scene
+- [x] Add dynamical scene
 
 ### First Focus
 
