@@ -11,8 +11,8 @@ const float MAX_DIST = 100.0;
 const vec3 ZERO_VECTOR = vec3(0.0);
 const vec3 WORLD_UP = vec3(0.0, -1.0, 0.0);
 const float AXIS_THINKNESS = 0.1;
-const vec3 LIGHT_POSITION = vec3(5.0);
-const vec3 BACKGROUND_COLOR = vec3(0.1); // grey background
+//const vec3 LIGHT_POSITION = vec3(5.0);
+const vec3 BACKGROUND_COLOR = vec3(0.5, 0.7, 0.9); // blue sky
 
 struct PlotConfig {
     vec3 min_bounds;
@@ -20,7 +20,7 @@ struct PlotConfig {
 
 };
 // initialize boudary box
-PlotConfig boundaries = PlotConfig(vec3(-15.0), vec3(15.0));
+PlotConfig boundaries = PlotConfig(vec3(-20.0), vec3(20.0));
 
 layout(push_constant) uniform uPushedConstants {
     vec3 camPos;
@@ -31,6 +31,36 @@ layout(push_constant) uniform uPushedConstants {
 } uPushed;
 
 // helper functions
+// https://www.shadertoy.com/view/4djSRW
+float hash(vec3 p) {
+    p = fract(p * .1031);
+    p += dot(p, p.zyx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
+
+float noise(vec3 p) {
+    vec3 fl = floor(p); 
+    vec3 fr = fract(p);
+    vec3 s = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
+    //fr = fr * fr * (3.0 - 2.0 * fr);
+    return mix(mix(mix(hash(fl + vec3(0,0,0)), hash(fl + vec3(1,0,0)), fr.x),
+               mix(hash(fl + vec3(0,1,0)), hash(fl + vec3(1,1,0)), fr.x), fr.y),
+               mix(mix(hash(fl + vec3(0,0,1)), hash(fl + vec3(1,0,1)), fr.x),
+               mix(hash(fl + vec3(0, 1, 1)), hash(fl + vec3(1,1,1)), fr.x), fr.y), fr.z);
+}
+
+float fbm(vec3 p) {
+    float v = 0.0; 
+    float a = 0.5;
+    for(int i=0; i<3; i++) {
+        v += a * noise(p);
+        p *= 2.0; 
+        a *= 0.5;
+    }
+    return v;
+}
+
+
 float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
     vec3 half_length = (max_bounds - min_bounds) * 0.5;
     vec3 center = (max_bounds + min_bounds) * 0.5;
@@ -39,10 +69,12 @@ float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
 }
 
 float implicitFormula(vec3 p) {
-    //return (p.y - sin(p.x + uPushed.time) * cos(p.z + uPushed.time));
-    return cos(p.x) + cos(p.y) + cos(p.z) - sin(uPushed.time);
+    float wave = (p.y - sin(p.x + uPushed.time) * cos(p.z + uPushed.time));
+    float fluff = fbm(p * 0.4) * 2.0;
+    return wave + fluff;
 }
 
+/*
 vec3 calcNorm(vec3 p) {
     vec2 e = vec2(EPS, 0.0);
     vec3 grad_impl = vec3(
@@ -53,13 +85,12 @@ vec3 calcNorm(vec3 p) {
 
     return normalize(grad_impl);
 }
-
+*/
 float getHartDist(vec3 p) {
     float boxDist = boundary_box(p, boundaries.min_bounds, boundaries.max_bounds);
 
     float f = implicitFormula(p);
-    vec3 g = calcNorm(p);
-    float clippedShapeDist = max(boxDist, abs(f) / max(length(g), 0.0001));
+    float clippedShapeDist = max(boxDist, abs(f) / 2.0);
 
     return clippedShapeDist;
 }
@@ -80,42 +111,40 @@ void main() {
 
     // cone march
     float dO = 0.0;
-    float halfAngle = 0.01; // rad
-    float coneSpread = tan(halfAngle);
+    float coneSpread = 0.08;
+
     float accumulatedAlpha = 0.0;
     vec3 accumulatedColor = vec3(0.0);
-    vec3 objectColor = vec3(0.3, 0.7, 1.0);
+    //vec3 objectColor = vec3(0.3, 0.7, 1.0);
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = rO + rD * dO; // ray equation
         float dS = getHartDist(p);
         float coneRadius = dO * coneSpread;
+        vec3 cloudBaseCol = vec3(0.8, 0.8, 0.9);
 
         if (coneRadius > dS) {
             // how much of the cone is inside the shape
             float insidePortion = clamp((coneRadius - dS) / coneRadius, 0.0, 1.0);
 
-            // color based on the cone coverage
-            float opacity = insidePortion * (1.0 - accumulatedAlpha);
-            accumulatedColor += objectColor * opacity;
+            // color based on the cone coverage * fluffy-ness
+            float opacity = insidePortion * (1.0 - accumulatedAlpha) * 0.3;
+            // top of the cloud is brighter
+            float shading = smoothstep(-1.0, 1.0, p.y); 
+
+            vec3 color = mix(cloudBaseCol * 0.5, vec3(1.0), shading);
+
+            accumulatedColor += color * opacity;
             accumulatedAlpha += opacity;
         }
         // next step
-        dO += dS*0.5;
+        dO += max(dS * 0.5, 0.05);
         if (dO > MAX_DIST || accumulatedAlpha >= 0.99) {
             break;
         }
     }
 
-    // lambertian
-    vec3 p = rO + rD * dO;
-    // Lambertian diffusion
-    vec3 n = calcNorm(p);
-    vec3 l = normalize(LIGHT_POSITION - p);
-    float diffusion = max(dot(n, l), 0.0);
-    accumulatedColor = accumulatedColor * (diffusion + vec3(0.01));
-
-    vec3 finalColor = accumulatedColor + (1.0 - accumulatedAlpha) * BACKGROUND_COLOR;
+    vec3 finalColor = mix(BACKGROUND_COLOR, accumulatedColor, accumulatedAlpha);
 
     fragColor = vec4(finalColor, 1.0);
 }
