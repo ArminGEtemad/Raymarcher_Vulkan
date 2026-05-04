@@ -57,9 +57,9 @@ void CameraLogic::update(WindowHandling &window) {
   if (glfwGetKey(nativeWin, GLFW_KEY_O) == GLFW_PRESS)
     cameraTarget = glm::vec3(0.0, 0.0, 0.0);
 }
-CameraPushConstants CameraLogic::getCameraPushConstants() {
+Camera CameraLogic::getCameraPushConstants() {
   // coordinate transformation
-  CameraPushConstants cameraData;
+  Camera cameraData;
   cameraData.position.x = radius * sin(phi) * cos(theta);
   cameraData.position.y = radius * cos(phi);
   cameraData.position.z = radius * sin(phi) * sin(theta);

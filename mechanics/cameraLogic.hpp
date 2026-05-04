@@ -9,7 +9,7 @@ namespace miniEngine {
 class CameraLogic {
 public:
   void update(WindowHandling &window);
-  CameraPushConstants getCameraPushConstants();
+  Camera getCameraPushConstants();
 
 private:
   float radius = 10.0f;
