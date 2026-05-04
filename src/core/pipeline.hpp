@@ -2,15 +2,28 @@
 
 // add header files
 #include "setup.hpp"
+#include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 
 namespace miniEngine {
 // camera position to be pushed into the gpu
-struct alignas(16) CameraPushConstants {
+struct alignas(16) Camera {
   glm::vec3 position;
   float pad0 = 0.0;
   glm::vec3 target;
   float pad1 = 0.0;
+};
+
+// dynamic scene adding time to the functions
+struct alignas(16) DynamicScene {
+  float time;
+  // glm::vec3 pad0 = {0.0, 0.0, 0.0};
+};
+
+// push constants
+struct PushConstants {
+  Camera cemra;
+  DynamicScene dynamicScene;
 };
 
 struct PipelineConfigInfo {
