@@ -41,7 +41,7 @@ float hash(vec3 p) {
 float noise(vec3 p) {
     vec3 fl = floor(p); 
     vec3 fr = fract(p);
-    vec3 s = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
+    fr = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
     //fr = fr * fr * (3.0 - 2.0 * fr);
     return mix(mix(mix(hash(fl + vec3(0,0,0)), hash(fl + vec3(1,0,0)), fr.x),
                mix(hash(fl + vec3(0,1,0)), hash(fl + vec3(1,1,0)), fr.x), fr.y),
