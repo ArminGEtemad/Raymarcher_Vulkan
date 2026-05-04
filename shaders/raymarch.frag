@@ -22,11 +22,13 @@ struct PlotConfig {
 // initialize boudary box
 PlotConfig boundaries = PlotConfig(vec3(-15.0), vec3(15.0));
 
-// camera
-layout(push_constant) uniform CameraData {
-    vec3 position;
-    vec3 target;
-} camera;
+layout(push_constant) uniform uPushedConstants {
+    vec3 camPos;
+    float pad0;
+    vec3 camTarget;
+    float pad1;
+    float time;
+} uPushed;
 
 // helper functions
 float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
@@ -37,7 +39,8 @@ float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
 }
 
 float implicitFormula(vec3 p) {
-    return (p.y - sin(p.x) - cos(p.z));
+    //return (p.y - sin(p.x + uPushed.time) * cos(p.z + uPushed.time));
+    return cos(p.x) + cos(p.y) + cos(p.z) - sin(uPushed.time);
 }
 
 vec3 calcNorm(vec3 p) {
@@ -66,11 +69,11 @@ void main() {
     float screenRatio = fwidth(vertUv.y) / fwidth(vertUv.x);
     vec2 xy = (vertUv * 2.0 - 1.0) * vec2(screenRatio, 1.0);
     
-    vec3 cameraForward = normalize(camera.target - camera.position);
+    vec3 cameraForward = normalize(uPushed.camTarget - uPushed.camPos);
     vec3 cameraRight = normalize(cross(cameraForward, WORLD_UP));
     vec3 cameraUp = cross(cameraRight, cameraForward);
 
-    vec3 rO = camera.position;
+    vec3 rO = uPushed.camPos;
     vec3 rD = normalize(
         cameraRight * xy.x + cameraUp * xy.y + cameraForward
     ); // ray direction
