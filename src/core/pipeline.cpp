@@ -45,7 +45,7 @@ void PipelineEngine::createGraphicsPipeline(
   VkPushConstantRange pushConstantRange{};
   pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
   pushConstantRange.offset = 0;
-  pushConstantRange.size = sizeof(CameraPushConstants);
+  pushConstantRange.size = sizeof(PushConstants);
 
   // pipeline layout
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
