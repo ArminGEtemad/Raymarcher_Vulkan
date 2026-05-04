@@ -1,4 +1,5 @@
 #include "mainLoop.hpp"
+#include "pipeline.hpp"
 #include "swapchain.hpp"
 #include <GLFW/glfw3.h>
 
@@ -7,6 +8,7 @@
 namespace miniEngine {
 
 makeApp::makeApp() {
+  startTime = static_cast<float>(glfwGetTime());
   PipelineConfigInfo configInfo{};
 
   PipelineEngine::defaultPipelineConfigInfo(configInfo);
@@ -132,10 +134,17 @@ void makeApp::drawFrame() {
   scissor.extent = swapChain.getExtent();
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-  auto pushConstants = camera.getCameraPushConstants();
+  Camera cameraData = camera.getCameraPushConstants();
+  DynamicScene sceneData{};
+  sceneData.time = static_cast<float>(glfwGetTime()) - startTime;
+
+  PushConstants constants{};
+  constants.cemra = cameraData;
+  constants.dynamicScene = sceneData;
+
   vkCmdPushConstants(commandBuffer, pipeline->getPiplineLayout(),
-                     VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                     sizeof(CameraPushConstants), &pushConstants);
+                     VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants),
+                     &constants);
   vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
   vkCmdEndRendering(commandBuffer);

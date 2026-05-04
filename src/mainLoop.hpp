@@ -13,7 +13,7 @@ namespace miniEngine {
 class makeApp {
 public:
   static constexpr int WIDTH = 1000;
-  static constexpr int HEIGHT = 800;
+  static constexpr int HEIGHT = 1000;
 
   makeApp();
   ~makeApp();
@@ -38,6 +38,9 @@ private:
 
   // camera
   CameraLogic camera;
+
+  // dynamic scene
+  float startTime;
 
   // functions
   void createSyncObjects();
