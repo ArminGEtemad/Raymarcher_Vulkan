@@ -128,6 +128,12 @@ PipelineEngine::createShaderModule(const std::vector<char> &code) {
 };
 
 void PipelineEngine::defaultPipelineConfigInfo(PipelineConfigInfo &configInfo) {
+  configInfo.inputAssemblyInfo = {};
+  configInfo.viewportInfo = {};
+  configInfo.rasterizationInfo = {};
+  configInfo.multisampleInfo = {};
+  configInfo.colorBlendInfo = {};
+  configInfo.dynamicStateInfo = {};
   // dynamic state
   configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT,
                                     VK_DYNAMIC_STATE_SCISSOR};
