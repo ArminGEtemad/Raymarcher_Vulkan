@@ -6,6 +6,7 @@
 #include "setup.hpp"
 #include "swapchain.hpp"
 #include "window_handling.hpp"
+#include <filesystem>
 #include <memory>
 #include <vulkan/vulkan.h>
 
@@ -46,5 +47,11 @@ private:
   void createSyncObjects();
   void allocateCommandBuffer();
   void drawFrame();
+
+  // hot reload
+  std::filesystem::file_time_type lastShaderWriteTime;
+  PipelineConfigInfo cachedConfigInfo;
+  void reloadShader();
+  void checkShaderUpdate();
 };
 } // namespace miniEngine
