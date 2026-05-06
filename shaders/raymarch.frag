@@ -11,7 +11,6 @@ const float MAX_DIST = 100.0;
 const vec3 ZERO_VECTOR = vec3(0.0);
 const vec3 WORLD_UP = vec3(0.0, -1.0, 0.0);
 const float AXIS_THINKNESS = 0.1;
-//const vec3 LIGHT_POSITION = vec3(5.0);
 const vec3 BACKGROUND_COLOR = vec3(0.5, 0.7, 0.9); // blue sky
 
 struct PlotConfig {
@@ -20,7 +19,7 @@ struct PlotConfig {
 
 };
 // initialize boudary box
-PlotConfig boundaries = PlotConfig(vec3(-20.0), vec3(20.0));
+PlotConfig boundaries = PlotConfig(vec3(-30.0, -2.0, -30.0), vec3(30.0, 5.0, 30.0));
 
 layout(push_constant) uniform uPushedConstants {
     vec3 camPos;
@@ -32,34 +31,58 @@ layout(push_constant) uniform uPushedConstants {
 
 // helper functions
 // https://www.shadertoy.com/view/4djSRW
-float hash(vec3 p) {
+float hash13(vec3 p) {
     p = fract(p * .1031);
     p += dot(p, p.zyx + 33.33);
     return fract((p.x + p.y) * p.z);
 }
 
-float noise(vec3 p) {
+vec3 hash33(vec3 p) {
+	p = fract(p * vec3(.1031, .1030, .0973));
+    p += dot(p, p.yxz + 33.33);
+    return fract((p.xxy + p.yxx) * p.zyx);
+
+}
+
+float noisePerlin(vec3 p) {
     vec3 fl = floor(p); 
     vec3 fr = fract(p);
     fr = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
-    //fr = fr * fr * (3.0 - 2.0 * fr);
-    return mix(mix(mix(hash(fl + vec3(0,0,0)), hash(fl + vec3(1,0,0)), fr.x),
-               mix(hash(fl + vec3(0,1,0)), hash(fl + vec3(1,1,0)), fr.x), fr.y),
-               mix(mix(hash(fl + vec3(0,0,1)), hash(fl + vec3(1,0,1)), fr.x),
-               mix(hash(fl + vec3(0, 1, 1)), hash(fl + vec3(1,1,1)), fr.x), fr.y), fr.z);
+    return mix(mix(mix(hash13(fl + vec3(0,0,0)), hash13(fl + vec3(1,0,0)), fr.x),
+               mix(hash13(fl + vec3(0,1,0)), hash13(fl + vec3(1,1,0)), fr.x), fr.y),
+               mix(mix(hash13(fl + vec3(0,0,1)), hash13(fl + vec3(1,0,1)), fr.x),
+               mix(hash13(fl + vec3(0, 1, 1)), hash13(fl + vec3(1,1,1)), fr.x), fr.y), fr.z);
+}
+
+float noiseWorley(vec3 p) {
+    vec3 fl = floor(p);
+    vec3 fr = fract(p);
+    float minDist = 1.0;
+    
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                vec3 offset = vec3(float(x), float(y), float(z));
+                vec3 h = hash33(fl + offset);
+                vec3 r = offset + h - fr;
+                float d = dot(r, r);
+                minDist = min(minDist, d);
+            }
+        }
+    }
+    return sqrt(minDist);
 }
 
 float fbm(vec3 p) {
     float v = 0.0; 
     float a = 0.5;
-    for(int i=0; i<3; i++) {
-        v += a * noise(p);
-        p *= 2.0; 
+    for(int i=0; i<4; i++) {
+        v += a * noisePerlin(p);
+        p *= 2.3; 
         a *= 0.5;
     }
     return v;
 }
-
 
 float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
     vec3 half_length = (max_bounds - min_bounds) * 0.5;
@@ -69,28 +92,22 @@ float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
 }
 
 float implicitFormula(vec3 p) {
-    float wave = (p.y - sin(p.x + uPushed.time) * cos(p.z + uPushed.time));
-    float fluff = fbm(p * 0.4) * 2.0;
-    return wave + fluff;
+
+    float wave = p.y - sin(p.x * 0.8 + uPushed.time * 0.5) * cos(p.z * 0.8 + uPushed.time * 0.5);
+    
+    float fluff = fbm(p * 0.3 + uPushed.time * 0.1) * 2.5;
+    float baseCloud = wave - fluff;
+    
+    float erosion = noiseWorley(p * 0.2 - uPushed.time * 0.2) * 4.5;
+    
+    return baseCloud + erosion;
 }
 
-/*
-vec3 calcNorm(vec3 p) {
-    vec2 e = vec2(EPS, 0.0);
-    vec3 grad_impl = vec3(
-        implicitFormula(p + e.xyy) - implicitFormula(p - e.xyy),
-        implicitFormula(p + e.yxy) - implicitFormula(p - e.yxy),
-        implicitFormula(p + e.yyx) - implicitFormula(p - e.yyx)
-    ) / (2.0 * EPS);
-
-    return normalize(grad_impl);
-}
-*/
 float getHartDist(vec3 p) {
     float boxDist = boundary_box(p, boundaries.min_bounds, boundaries.max_bounds);
 
     float f = implicitFormula(p);
-    float clippedShapeDist = max(boxDist, abs(f) / 2.0);
+    float clippedShapeDist = max(boxDist, f * 0.8);
 
     return clippedShapeDist;
 }
@@ -111,11 +128,10 @@ void main() {
 
     // cone march
     float dO = 0.0;
-    float coneSpread = 0.08;
+    float coneSpread = 0.05;
 
     float accumulatedAlpha = 0.0;
     vec3 accumulatedColor = vec3(0.0);
-    //vec3 objectColor = vec3(0.3, 0.7, 1.0);
 
     for (int i = 0; i < MAX_STEPS; i++) {
         vec3 p = rO + rD * dO; // ray equation
