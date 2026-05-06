@@ -3,18 +3,24 @@
 #include "swapchain.hpp"
 #include <GLFW/glfw3.h>
 
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 namespace miniEngine {
 
 makeApp::makeApp() {
   startTime = static_cast<float>(glfwGetTime());
-  PipelineConfigInfo configInfo{};
+  // PipelineConfigInfo cachedConfigInfo{};
 
-  PipelineEngine::defaultPipelineConfigInfo(configInfo);
-  configInfo.colorAttachmentFormat = swapChain.getFormat();
+  PipelineEngine::defaultPipelineConfigInfo(cachedConfigInfo);
+  cachedConfigInfo.colorAttachmentFormat = swapChain.getFormat();
 
-  pipeline = std::make_unique<PipelineEngine>(device, configInfo);
+  pipeline = std::make_unique<PipelineEngine>(device, cachedConfigInfo);
+  lastShaderWriteTime =
+      std::filesystem::last_write_time("shaders/raymarch.frag");
 
   allocateCommandBuffer();
   createSyncObjects();
@@ -28,6 +34,7 @@ makeApp::~makeApp() {
 void makeApp::run() {
   while (!createWindow.shouldClose()) {
     glfwPollEvents();
+    checkShaderUpdate();
     camera.update(createWindow);
     drawFrame();
   }
@@ -188,4 +195,36 @@ void makeApp::drawFrame() {
 
   vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
 }
+
+// hot reload logic
+void makeApp::checkShaderUpdate() {
+  try {
+    auto currentWriteTime =
+        std::filesystem::last_write_time("shaders/raymarch.frag");
+    if (currentWriteTime > lastShaderWriteTime) {
+      lastShaderWriteTime = currentWriteTime;
+      std::cout << "Shader has been changed. Compiling... (Hot reaload)"
+                << "\n";
+      reloadShader();
+    }
+
+  } catch (const std::filesystem::filesystem_error &e) {
+  }
+}
+
+void makeApp::reloadShader() {
+  vkDeviceWaitIdle(device.getDevice());
+  // call cmake
+  int compiled = std::system("cmake --build build --target CompileShaders");
+  if (compiled != 0) {
+    std::cerr << "Compilation failed (Hot Reload)\n";
+    return;
+  }
+
+  pipeline.reset();
+  pipeline = std::make_unique<PipelineEngine>(device, cachedConfigInfo);
+
+  std::cout << "Pipeline successfully rebuilt!\n";
+}
+
 } // namespace miniEngine
