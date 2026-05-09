@@ -2,6 +2,15 @@
 
 layout(location = 0) in vec2 vertUv;
 layout(location = 0) out vec4 fragColor;
+layout(set = 0, binding = 0) uniform sampler3D noiseTex;
+
+layout(push_constant) uniform uPushedConstants {
+    vec3 camPos;
+    float pad0;
+    vec3 camTarget;
+    float pad1;
+    float time;
+} uPushed;
 
 // constants translated pretty from my WGSL project
 const float EPS = 0.01;
@@ -21,69 +30,7 @@ struct PlotConfig {
 // initialize boudary box
 PlotConfig boundaries = PlotConfig(vec3(-30.0, -2.0, -30.0), vec3(30.0, 5.0, 30.0));
 
-layout(push_constant) uniform uPushedConstants {
-    vec3 camPos;
-    float pad0;
-    vec3 camTarget;
-    float pad1;
-    float time;
-} uPushed;
-
 // helper functions
-// https://www.shadertoy.com/view/4djSRW
-float hash13(vec3 p) {
-    p = fract(p * .1031);
-    p += dot(p, p.zyx + 33.33);
-    return fract((p.x + p.y) * p.z);
-}
-
-vec3 hash33(vec3 p) {
-	p = fract(p * vec3(.1031, .1030, .0973));
-    p += dot(p, p.yxz + 33.33);
-    return fract((p.xxy + p.yxx) * p.zyx);
-
-}
-
-float noisePerlin(vec3 p) {
-    vec3 fl = floor(p); 
-    vec3 fr = fract(p);
-    fr = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
-    return mix(mix(mix(hash13(fl + vec3(0,0,0)), hash13(fl + vec3(1,0,0)), fr.x),
-               mix(hash13(fl + vec3(0,1,0)), hash13(fl + vec3(1,1,0)), fr.x), fr.y),
-               mix(mix(hash13(fl + vec3(0,0,1)), hash13(fl + vec3(1,0,1)), fr.x),
-               mix(hash13(fl + vec3(0, 1, 1)), hash13(fl + vec3(1,1,1)), fr.x), fr.y), fr.z);
-}
-
-float noiseWorley(vec3 p) {
-    vec3 fl = floor(p);
-    vec3 fr = fract(p);
-    float minDist = 1.0;
-    
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
-            for (int z = -1; z <= 1; z++) {
-                vec3 offset = vec3(float(x), float(y), float(z));
-                vec3 h = hash33(fl + offset);
-                vec3 r = offset + h - fr;
-                float d = dot(r, r);
-                minDist = min(minDist, d);
-            }
-        }
-    }
-    return sqrt(minDist);
-}
-
-float fbm(vec3 p) {
-    float v = 0.0; 
-    float a = 0.5;
-    for(int i=0; i<4; i++) {
-        v += a * noisePerlin(p);
-        p *= 2.3; 
-        a *= 0.5;
-    }
-    return v;
-}
-
 float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
     vec3 half_length = (max_bounds - min_bounds) * 0.5;
     vec3 center = (max_bounds + min_bounds) * 0.5;
@@ -95,11 +42,13 @@ float implicitFormula(vec3 p) {
 
     float wave = p.y - sin(p.x * 0.8 + uPushed.time * 0.5) * cos(p.z * 0.8 + uPushed.time * 0.5);
     
-    float fluff = fbm(p * 0.3 + uPushed.time * 0.1) * 2.5;
+    vec3 fluffVec = (p * 0.3 + uPushed.time * 0.2) / 10.0;
+    vec3 erosionVec = (p * 0.2 - uPushed.time * 0.3) / 10.0;
+    
+    float fluff = texture(noiseTex, fluffVec).r * 5.5;
+    float erosion = texture(noiseTex, erosionVec).g * 6.5;
+    
     float baseCloud = wave - fluff;
-    
-    float erosion = noiseWorley(p * 0.2 - uPushed.time * 0.2) * 4.5;
-    
     return baseCloud + erosion;
 }
 
