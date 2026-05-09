@@ -17,17 +17,28 @@ vec3 hash33(vec3 p) {
     return fract((p.xxy + p.yxx) * p.zyx);
 }
 
-float noisePerlin(vec3 p) {
+float noisePerlin(vec3 p, float period) {
     vec3 fl = floor(p); 
     vec3 fr = fract(p);
     fr = fr * fr * fr * (fr * (fr * 6.0 - 15.0) + 10.0);
-    return mix(mix(mix(hash13(fl + vec3(0,0,0)), hash13(fl + vec3(1,0,0)), fr.x),
-               mix(hash13(fl + vec3(0,1,0)), hash13(fl + vec3(1,1,0)), fr.x), fr.y),
-               mix(mix(hash13(fl + vec3(0,0,1)), hash13(fl + vec3(1,0,1)), fr.x),
-               mix(hash13(fl + vec3(0, 1, 1)), hash13(fl + vec3(1,1,1)), fr.x), fr.y), fr.z);
+    
+    // loop perfectly at the edges
+    vec3 p000 = mod(fl + vec3(0,0,0), period);
+    vec3 p100 = mod(fl + vec3(1,0,0), period);
+    vec3 p010 = mod(fl + vec3(0,1,0), period);
+    vec3 p110 = mod(fl + vec3(1,1,0), period);
+    vec3 p001 = mod(fl + vec3(0,0,1), period);
+    vec3 p101 = mod(fl + vec3(1,0,1), period);
+    vec3 p011 = mod(fl + vec3(0,1,1), period);
+    vec3 p111 = mod(fl + vec3(1,1,1), period);
+
+    return mix(mix(mix(hash13(p000), hash13(p100), fr.x),
+                   mix(hash13(p010), hash13(p110), fr.x), fr.y),
+               mix(mix(hash13(p001), hash13(p101), fr.x),
+                   mix(hash13(p011), hash13(p111), fr.x), fr.y), fr.z);
 }
 
-float noiseWorley(vec3 p) {
+float noiseWorley(vec3 p, float period) {
     vec3 fl = floor(p);
     vec3 fr = fract(p);
     float minDist = 1.0;
@@ -35,7 +46,9 @@ float noiseWorley(vec3 p) {
         for (int y = -1; y <= 1; y++) {
             for (int z = -1; z <= 1; z++) {
                 vec3 offset = vec3(float(x), float(y), float(z));
-                vec3 h = hash33(fl + offset);
+                // loop perfectly at the edges
+                vec3 wrappedGrid = mod(fl + offset, period);
+                vec3 h = hash33(wrappedGrid);
                 vec3 r = offset + h - fr;
                 float d = dot(r, r);
                 minDist = min(minDist, d);
@@ -45,11 +58,11 @@ float noiseWorley(vec3 p) {
     return sqrt(minDist);
 }
 
-float fbm(vec3 p) {
+float fbm(vec3 p, float period) {
     float v = 0.0; 
     float a = 0.5;
     for(int i=0; i<4; i++) {
-        v += a * noisePerlin(p);
+        v += a * noisePerlin(p, period);
         p *= 2.3; 
         a *= 0.5;
     }
@@ -62,10 +75,11 @@ void main() {
     
     vec3 p = vec3(voxelCoord) / 256.0; 
     
-    vec3 sampleScale = p * 10.0;
+    float period = 10.0;
+    vec3 sampleScale = p * period;
 
-    float fluffNoise = fbm(sampleScale);
-    float erosionNoise = noiseWorley(sampleScale);
+    float fluffNoise = fbm(sampleScale, period);
+    float erosionNoise = noiseWorley(sampleScale, period);
     
     imageStore(noiseVolume, voxelCoord, vec4(fluffNoise, erosionNoise, 0.0, 1.0));
 }
