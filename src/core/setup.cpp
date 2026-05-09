@@ -5,12 +5,14 @@
 
 // add libraries
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace miniEngine {
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -53,9 +55,11 @@ SetupDevice::SetupDevice(WindowHandling &window) : window{window} {
   pickPhysicalDevice();
   createLogicalDevice();
   createCommandPool();
+  createDescriptorPool();
 }
 
 SetupDevice::~SetupDevice() {
+  vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyCommandPool(device, commandPool, nullptr);
   vkDestroyDevice(device, nullptr);
   if (enableValidationLayers) {
@@ -237,6 +241,31 @@ void SetupDevice::createCommandPool() {
       VK_SUCCESS) {
     throw std::runtime_error("failed to create command pool!");
   }
+}
+
+void SetupDevice::createDescriptorPool() {
+  VkDescriptorPoolSize poolSizes[] = {
+      {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};
+  VkDescriptorPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount = 2;
+  poolInfo.pPoolSizes = poolSizes;
+  poolInfo.maxSets = 10;
+  vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
+}
+
+uint32_t SetupDevice::findMemoryType(uint32_t typeFilter,
+                                     VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags &
+                                    properties) == properties) {
+      return i;
+    }
+  }
+  throw std::runtime_error("failed to find suitable memory type");
 }
 
 // ----- Support, suitability, extensions and validation -----

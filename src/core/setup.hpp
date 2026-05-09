@@ -55,6 +55,11 @@ public:
   VkQueue getGraphicsQueue() { return graphicsQueue; }
   VkQueue getPresentQueue() { return presentQueue; }
 
+  // find memory for texture
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          VkMemoryPropertyFlags properties);
+  VkDescriptorPool getDescriptorPool() { return descriptorPool; }
+
 private:
   // initializations
   VkInstance instance;
@@ -69,6 +74,7 @@ private:
   VkQueue presentQueue;
   WindowHandling &window;
   VkCommandPool commandPool;
+  VkDescriptorPool descriptorPool;
 
   // functions
   void createInstance();
@@ -76,6 +82,7 @@ private:
   void pickPhysicalDevice();
   void createLogicalDevice();
   void createCommandPool();
+  void createDescriptorPool();
 
   // -- helper functions --
   // device suiability
