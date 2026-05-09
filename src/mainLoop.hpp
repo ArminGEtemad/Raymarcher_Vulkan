@@ -6,9 +6,11 @@
 #include "setup.hpp"
 #include "swapchain.hpp"
 #include "window_handling.hpp"
+#include <vulkan/vulkan.h>
+
+// add libraries
 #include <filesystem>
 #include <memory>
-#include <vulkan/vulkan.h>
 
 namespace miniEngine {
 class makeApp {
@@ -32,6 +34,14 @@ private:
   std::unique_ptr<PipelineEngine> pipeline;
   VkCommandBuffer commandBuffer;
 
+  // precalculated noise varaiables
+  VkImage noiseImage;
+  VkDeviceMemory noiseImageMemory;
+  VkImageView noiseImageView;
+  VkDescriptorSet computeDescriptorSet;
+  VkSampler noiseSampler;
+  VkDescriptorSet graphicDescriptorSet;
+
   // sync
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
@@ -53,5 +63,8 @@ private:
   PipelineConfigInfo cachedConfigInfo;
   void reloadShader();
   void checkShaderUpdate();
+
+  // precalculate the noise
+  void generateNoise();
 };
 } // namespace miniEngine
