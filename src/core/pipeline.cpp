@@ -14,6 +14,8 @@ PipelineEngine::PipelineEngine(SetupDevice &device,
 PipelineEngine::~PipelineEngine() {
   vkDestroyPipeline(device.getDevice(), graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(device.getDevice(), pipelineLayout, nullptr);
+  vkDestroyDescriptorSetLayout(device.getDevice(), descriptorSetLayout,
+                               nullptr);
   vkDestroyShaderModule(device.getDevice(), fragShaderModule, nullptr);
   vkDestroyShaderModule(device.getDevice(), vertShaderModule, nullptr);
 }
@@ -47,11 +49,28 @@ void PipelineEngine::createGraphicsPipeline(
   pushConstantRange.offset = 0;
   pushConstantRange.size = sizeof(PushConstants);
 
+  // passing 3D texture
+  VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+  samplerLayoutBinding.binding = 0;
+  samplerLayoutBinding.descriptorCount = 1;
+  samplerLayoutBinding.descriptorType =
+      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  samplerLayoutBinding.pImmutableSamplers = nullptr;
+  samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  VkDescriptorSetLayoutCreateInfo descLayoutInfo{};
+  descLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  descLayoutInfo.bindingCount = 1;
+  descLayoutInfo.pBindings = &samplerLayoutBinding;
+
+  vkCreateDescriptorSetLayout(device.getDevice(), &descLayoutInfo, nullptr,
+                              &descriptorSetLayout);
+
   // pipeline layout
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 0;
-  pipelineLayoutInfo.pSetLayouts = nullptr;
+  pipelineLayoutInfo.setLayoutCount = 1; // 3D texture
+  pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
   pipelineLayoutInfo.pushConstantRangeCount = 1; // camera
   pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
