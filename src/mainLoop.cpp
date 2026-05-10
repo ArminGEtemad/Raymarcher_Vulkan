@@ -1,8 +1,10 @@
+// add header files
 #include "mainLoop.hpp"
 #include "pipeline.hpp"
 #include "swapchain.hpp"
 #include <GLFW/glfw3.h>
 
+// add libraries
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -10,7 +12,6 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
 namespace miniEngine {
 
 makeApp::makeApp() {
