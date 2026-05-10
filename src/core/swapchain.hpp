@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 // add libraries
+#include <cstdio>
 #include <vector>
 
 namespace miniEngine {
@@ -22,6 +23,7 @@ public:
   VkImageView getImageView(int index) { return swapChainImageViews[index]; }
   VkImage getImage(int index) { return swapChainImages[index]; }
   VkSwapchainKHR getSwapChain() { return swapChain; }
+  size_t getImageCount() { return swapChainImages.size(); }
 
 private:
   // initializations
