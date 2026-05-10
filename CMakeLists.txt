@@ -28,6 +28,7 @@ endif()
 set(SHADER_SOURCES
     shaders/fullscreen.vert
     shaders/raymarch.frag
+    shaders/noise_gen.comp
 )
 
 foreach(SHADER ${SHADER_SOURCES})

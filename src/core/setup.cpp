@@ -5,12 +5,14 @@
 
 // add libraries
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 namespace miniEngine {
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -53,9 +55,11 @@ SetupDevice::SetupDevice(WindowHandling &window) : window{window} {
   pickPhysicalDevice();
   createLogicalDevice();
   createCommandPool();
+  createDescriptorPool();
 }
 
 SetupDevice::~SetupDevice() {
+  vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyCommandPool(device, commandPool, nullptr);
   vkDestroyDevice(device, nullptr);
   if (enableValidationLayers) {
@@ -88,6 +92,11 @@ void SetupDevice::createInstance() {
   VkInstanceCreateInfo createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
+
+  // apple device portability
+#ifdef __APPLE__
+  createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
   // required for message callback
   std::vector<const char *> extensions = getRequiredExtensions();
@@ -239,6 +248,31 @@ void SetupDevice::createCommandPool() {
   }
 }
 
+void SetupDevice::createDescriptorPool() {
+  VkDescriptorPoolSize poolSizes[] = {
+      {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 10},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};
+  VkDescriptorPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount = 2;
+  poolInfo.pPoolSizes = poolSizes;
+  poolInfo.maxSets = 10;
+  vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
+}
+
+uint32_t SetupDevice::findMemoryType(uint32_t typeFilter,
+                                     VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags &
+                                    properties) == properties) {
+      return i;
+    }
+  }
+  throw std::runtime_error("failed to find suitable memory type");
+}
+
 // ----- Support, suitability, extensions and validation -----
 
 SwapChainSupportDetails
@@ -302,13 +336,13 @@ bool SetupDevice::isDeviceSuitable(VkPhysicalDevice device) {
   vkGetPhysicalDeviceProperties(device, &deviceProperties);
   vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-  // for raymarching I want discrete GPU
-  // TODO Fallback on integrated GPU with a warning later
   bool isDiscrete =
       deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
   if (isDiscrete) {
     std::cout << "Selected GPU: " << deviceProperties.deviceName << "\n";
+  } else {
+    std::cout << "No Discrete GPU Found. Performance could be effected" << "\n";
   }
 
   // swapt chain
@@ -319,8 +353,7 @@ bool SetupDevice::isDeviceSuitable(VkPhysicalDevice device) {
                         !swapChainSupport.presentModes.empty();
   }
 
-  return isDiscrete && indices.isComplete() && extensionsSupported &&
-         swapChainAdequate;
+  return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 // valiadation layer support
@@ -359,6 +392,9 @@ std::vector<const char *> SetupDevice::getRequiredExtensions() {
   if (enableValidationLayers) {
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   }
+#ifdef __APPLE__
+  extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 
   return extensions;
 }

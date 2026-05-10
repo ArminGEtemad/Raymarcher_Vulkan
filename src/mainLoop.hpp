@@ -6,8 +6,12 @@
 #include "setup.hpp"
 #include "swapchain.hpp"
 #include "window_handling.hpp"
-#include <memory>
 #include <vulkan/vulkan.h>
+
+// add libraries
+#include <cstdint>
+#include <filesystem>
+#include <memory>
 
 namespace miniEngine {
 class makeApp {
@@ -31,10 +35,24 @@ private:
   std::unique_ptr<PipelineEngine> pipeline;
   VkCommandBuffer commandBuffer;
 
+  // precalculated noise varaiables
+  VkImage noiseImage;
+  VkDeviceMemory noiseImageMemory;
+  VkImageView noiseImageView;
+  VkDescriptorSet computeDescriptorSet;
+  VkSampler noiseSampler;
+  VkDescriptorSet graphicDescriptorSet;
+
   // sync
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
+  static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+  uint32_t currentFrame = 0;
+  std::vector<VkCommandBuffer> commandBuffers;
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  std::vector<VkFence> inFlightFences;
 
   // camera
   CameraLogic camera;
@@ -46,5 +64,14 @@ private:
   void createSyncObjects();
   void allocateCommandBuffer();
   void drawFrame();
+
+  // hot reload
+  std::filesystem::file_time_type lastShaderWriteTime;
+  PipelineConfigInfo cachedConfigInfo;
+  void reloadShader();
+  void checkShaderUpdate();
+
+  // precalculate the noise
+  void generateNoise();
 };
 } // namespace miniEngine

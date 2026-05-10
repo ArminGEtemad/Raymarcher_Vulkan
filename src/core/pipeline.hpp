@@ -55,15 +55,20 @@ public:
   static void defaultPipelineConfigInfo(PipelineConfigInfo &configInfo);
   VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
   VkPipelineLayout getPiplineLayout() { return pipelineLayout; }
+  VkDescriptorSetLayout getDescriptorSetLayout() { return descriptorSetLayout; }
+  static std::vector<char> readFile(const std::string &filepath);
 
 private:
   SetupDevice &device;
-  static std::vector<char> readFile(const std::string &filepath);
+
   void createGraphicsPipeline(const PipelineConfigInfo &configInfo);
   VkShaderModule createShaderModule(const std::vector<char> &code);
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
   VkPipeline graphicsPipeline;
   VkPipelineLayout pipelineLayout;
+
+  // for the 3D texture
+  VkDescriptorSetLayout descriptorSetLayout;
 };
 } // namespace miniEngine
