@@ -93,6 +93,11 @@ void SetupDevice::createInstance() {
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
 
+  // apple device portability
+#ifdef __APPLE__
+  createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
   // required for message callback
   std::vector<const char *> extensions = getRequiredExtensions();
   createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -331,13 +336,13 @@ bool SetupDevice::isDeviceSuitable(VkPhysicalDevice device) {
   vkGetPhysicalDeviceProperties(device, &deviceProperties);
   vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-  // for raymarching I want discrete GPU
-  // TODO Fallback on integrated GPU with a warning later
   bool isDiscrete =
       deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
   if (isDiscrete) {
     std::cout << "Selected GPU: " << deviceProperties.deviceName << "\n";
+  } else {
+    std::cout << "No Discrete GPU Found. Performance could be effected";
   }
 
   // swapt chain
@@ -348,8 +353,7 @@ bool SetupDevice::isDeviceSuitable(VkPhysicalDevice device) {
                         !swapChainSupport.presentModes.empty();
   }
 
-  return isDiscrete && indices.isComplete() && extensionsSupported &&
-         swapChainAdequate;
+  return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 // valiadation layer support
@@ -388,6 +392,9 @@ std::vector<const char *> SetupDevice::getRequiredExtensions() {
   if (enableValidationLayers) {
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   }
+#ifdef __APPLE__
+  extensions.pop_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 
   return extensions;
 }

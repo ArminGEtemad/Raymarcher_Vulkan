@@ -102,10 +102,16 @@ private:
       VkDebugUtilsMessengerCreateInfoEXT &createInfo);
 
   // extension checkers
+  // Apple device needs the VK_KHR_portability_subset
   std::vector<const char *> getRequiredExtensions();
   void hasInstanceExtension();
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+#ifdef __APPLE__
+  const std::vector<const char *> deviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset"};
+#else
   const std::vector<const char *> deviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 };
+#endif
 } // namespace miniEngine
