@@ -33,11 +33,14 @@ makeApp::~makeApp() {
 
   // destroy all frames and the sync objects
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i],
-                       nullptr);
     vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i],
                        nullptr);
     vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
+  }
+
+  for (size_t i = 0; i < renderFinishedSemaphores.size(); i++) {
+    vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i],
+                       nullptr);
   }
 
   vkDestroySampler(device.getDevice(), noiseSampler, nullptr);
@@ -73,7 +76,7 @@ void makeApp::allocateCommandBuffer() {
 
 void makeApp::createSyncObjects() {
   imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-  renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphores.resize(swapChain.getImageCount());
   inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
   VkSemaphoreCreateInfo semaphoreInfo{};
@@ -87,12 +90,17 @@ void makeApp::createSyncObjects() {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
                           &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-        vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
-                          &renderFinishedSemaphores[i]) != VK_SUCCESS ||
         vkCreateFence(device.getDevice(), &fenceInfo, nullptr,
                       &inFlightFences[i]) != VK_SUCCESS) {
       throw std::runtime_error(
           "failed to create sychronizations for frames in flight");
+    }
+  }
+
+  for (size_t i = 0; i < renderFinishedSemaphores.size(); i++) {
+    if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
+                          &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create render finished objects");
     }
   }
 }
@@ -474,7 +482,7 @@ void makeApp::drawFrame() {
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
+  submitInfo.pSignalSemaphores = &renderFinishedSemaphores[imageIndex];
 
   vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo,
                 inFlightFences[currentFrame]);
@@ -483,7 +491,7 @@ void makeApp::drawFrame() {
   VkPresentInfoKHR presentInfo{};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
+  presentInfo.pWaitSemaphores = &renderFinishedSemaphores[imageIndex];
   VkSwapchainKHR swapChains[] = {swapChain.getSwapChain()};
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = swapChains;
