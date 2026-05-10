@@ -342,7 +342,7 @@ bool SetupDevice::isDeviceSuitable(VkPhysicalDevice device) {
   if (isDiscrete) {
     std::cout << "Selected GPU: " << deviceProperties.deviceName << "\n";
   } else {
-    std::cout << "No Discrete GPU Found. Performance could be effected";
+    std::cout << "No Discrete GPU Found. Performance could be effected" << "\n";
   }
 
   // swapt chain
