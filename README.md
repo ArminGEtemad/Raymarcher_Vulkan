@@ -41,9 +41,13 @@ I’m moving to Vulkan to get closer to the metal and to master **Volumetric Int
 
 ## Milestones
 
-### Future Focus
+### Final Focus
 
-- [ ] I have to research what I need to add until the Digital Dragons :)
+- [ ] Final touches and cleaning up
+- [x] Portability for MacOS
+- [x] Sync
+- [x] Compute shader and texture
+- [x] Adding noise to turn wave into cloud shape
 
 ### Moving to Clouds
 
