@@ -40,7 +40,7 @@ float boundary_box(vec3 p, vec3 min_bounds, vec3 max_bounds) {
 
 float implicitFormula(vec3 p) {
 
-    float wave = p.y - sin(p.x * 0.8 + uPushed.time * 0.5) * cos(p.z * 0.8 + uPushed.time * 0.5);
+    float wave = p.y - sin(p.x * 0.8 + uPushed.time * 0.5) * cos(p.z * 0.8 + uPushed.time * 0.5) * 1.5;
     
     vec3 fluffVec = (p * 0.3 + uPushed.time * 0.2) / 10.0;
     vec3 erosionVec = (p * 0.2 - uPushed.time * 0.3) / 10.0;
