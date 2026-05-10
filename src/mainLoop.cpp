@@ -3,6 +3,8 @@
 #include "swapchain.hpp"
 #include <GLFW/glfw3.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -28,13 +30,20 @@ makeApp::makeApp() {
 }
 makeApp::~makeApp() {
   vkDeviceWaitIdle(device.getDevice());
+
+  // destroy all frames and the sync objects
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroySemaphore(device.getDevice(), renderFinishedSemaphores[i],
+                       nullptr);
+    vkDestroySemaphore(device.getDevice(), imageAvailableSemaphores[i],
+                       nullptr);
+    vkDestroyFence(device.getDevice(), inFlightFences[i], nullptr);
+  }
+
   vkDestroySampler(device.getDevice(), noiseSampler, nullptr);
   vkDestroyImage(device.getDevice(), noiseImage, nullptr);
   vkDestroyImageView(device.getDevice(), noiseImageView, nullptr);
   vkFreeMemory(device.getDevice(), noiseImageMemory, nullptr);
-  vkDestroySemaphore(device.getDevice(), renderFinishedSemaphore, nullptr);
-  vkDestroySemaphore(device.getDevice(), imageAvailableSemaphore, nullptr);
-  vkDestroyFence(device.getDevice(), inFlightFence, nullptr);
 }
 
 void makeApp::run() {
@@ -48,19 +57,25 @@ void makeApp::run() {
 }
 
 void makeApp::allocateCommandBuffer() {
+  commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.commandPool = device.getCommandPool();
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandBufferCount = 1;
+  allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
   if (vkAllocateCommandBuffers(device.getDevice(), &allocInfo,
-                               &commandBuffer) != VK_SUCCESS) {
+                               commandBuffers.data()) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
 }
 
 void makeApp::createSyncObjects() {
+  imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
   VkSemaphoreCreateInfo semaphoreInfo{};
   semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -68,12 +83,18 @@ void makeApp::createSyncObjects() {
   fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // Start signaled so first
                                                   // frame doesn't wait forever
-
-  vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
-                    &imageAvailableSemaphore);
-  vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
-                    &renderFinishedSemaphore);
-  vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &inFlightFence);
+  // create sync objects for each frame in flight
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
+                          &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr,
+                          &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+        vkCreateFence(device.getDevice(), &fenceInfo, nullptr,
+                      &inFlightFences[i]) != VK_SUCCESS) {
+      throw std::runtime_error(
+          "failed to create sychronizations for frames in flight");
+    }
+  }
 }
 
 // allocating image
@@ -339,19 +360,20 @@ void makeApp::generateNoise() {
 
 void makeApp::drawFrame() {
   // Wait for the GPU to finish the previous frame
-  vkWaitForFences(device.getDevice(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-  vkResetFences(device.getDevice(), 1, &inFlightFence);
+  vkWaitForFences(device.getDevice(), 1, &inFlightFences[currentFrame], VK_TRUE,
+                  UINT64_MAX);
+  vkResetFences(device.getDevice(), 1, &inFlightFences[currentFrame]);
 
   uint32_t imageIndex;
   vkAcquireNextImageKHR(device.getDevice(), swapChain.getSwapChain(),
-                        UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE,
-                        &imageIndex);
+                        UINT64_MAX, imageAvailableSemaphores[currentFrame],
+                        VK_NULL_HANDLE, &imageIndex);
 
-  vkResetCommandBuffer(commandBuffer, 0);
+  vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  vkBeginCommandBuffer(commandBuffer, &beginInfo);
+  vkBeginCommandBuffer(commandBuffers[currentFrame], &beginInfo);
 
   // --- Dynamic Rendering Transition ---
   VkRenderingAttachmentInfo colorAttachment{};
@@ -385,18 +407,20 @@ void makeApp::drawFrame() {
   barrier.srcAccessMask = 0;
   barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-  vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+  vkCmdPipelineBarrier(commandBuffers[currentFrame],
+                       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0,
                        nullptr, 0, nullptr, 1, &barrier);
 
-  vkCmdBeginRendering(commandBuffer, &renderingInfo);
+  vkCmdBeginRendering(commandBuffers[currentFrame], &renderingInfo);
 
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+  vkCmdBindPipeline(commandBuffers[currentFrame],
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
                     pipeline->getGraphicsPipeline());
   // noise
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          pipeline->getPiplineLayout(), 0, 1,
-                          &graphicDescriptorSet, 0, nullptr);
+  vkCmdBindDescriptorSets(
+      commandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+      pipeline->getPiplineLayout(), 0, 1, &graphicDescriptorSet, 0, nullptr);
 
   VkViewport viewport{};
   viewport.x = 0.0f;
@@ -405,12 +429,12 @@ void makeApp::drawFrame() {
   viewport.height = static_cast<float>(swapChain.getExtent().height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
-  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+  vkCmdSetViewport(commandBuffers[currentFrame], 0, 1, &viewport);
 
   VkRect2D scissor{};
   scissor.offset = {0, 0};
   scissor.extent = swapChain.getExtent();
-  vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+  vkCmdSetScissor(commandBuffers[currentFrame], 0, 1, &scissor);
 
   Camera cameraData = camera.getCameraPushConstants();
   DynamicScene sceneData{};
@@ -420,23 +444,23 @@ void makeApp::drawFrame() {
   constants.cemra = cameraData;
   constants.dynamicScene = sceneData;
 
-  vkCmdPushConstants(commandBuffer, pipeline->getPiplineLayout(),
+  vkCmdPushConstants(commandBuffers[currentFrame], pipeline->getPiplineLayout(),
                      VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants),
                      &constants);
-  vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+  vkCmdDraw(commandBuffers[currentFrame], 3, 1, 0, 0);
 
-  vkCmdEndRendering(commandBuffer);
+  vkCmdEndRendering(commandBuffers[currentFrame]);
   barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
   barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
   barrier.dstAccessMask = 0;
 
-  vkCmdPipelineBarrier(commandBuffer,
+  vkCmdPipelineBarrier(commandBuffers[currentFrame],
                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0,
                        nullptr, 1, &barrier);
 
-  vkEndCommandBuffer(commandBuffer);
+  vkEndCommandBuffer(commandBuffers[currentFrame]);
 
   // --- Submit to Queue ---
   VkSubmitInfo submitInfo{};
@@ -445,26 +469,30 @@ void makeApp::drawFrame() {
   VkPipelineStageFlags waitStages[] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+  submitInfo.pWaitSemaphores = &imageAvailableSemaphores[currentFrame];
   submitInfo.pWaitDstStageMask = waitStages;
   submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &commandBuffer;
+  submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
+  submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 
-  vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo, inFlightFence);
+  vkQueueSubmit(device.getGraphicsQueue(), 1, &submitInfo,
+                inFlightFences[currentFrame]);
 
   // --- Present to Screen ---
   VkPresentInfoKHR presentInfo{};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+  presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
   VkSwapchainKHR swapChains[] = {swapChain.getSwapChain()};
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = swapChains;
   presentInfo.pImageIndices = &imageIndex;
 
   vkQueuePresentKHR(device.getPresentQueue(), &presentInfo);
+
+  // next frame
+  currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 // hot reload logic

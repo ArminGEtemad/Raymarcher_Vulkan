@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 
 // add libraries
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 
@@ -46,6 +47,12 @@ private:
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
+  static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+  uint32_t currentFrame = 0;
+  std::vector<VkCommandBuffer> commandBuffers;
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  std::vector<VkFence> inFlightFences;
 
   // camera
   CameraLogic camera;
