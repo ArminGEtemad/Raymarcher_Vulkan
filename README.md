@@ -2,9 +2,7 @@
 
 > version 1.0
 >
-> **Status:** Project Under Construction!
->
-> **Target:** a finished Demo for Digital Dragons 2026
+> **Target:** a finished Demo for Digital Dragons 2026 (goal met)
 
 A real-time 3D volumetric renderer written in `Vulkan` + `GLSL`.
 
