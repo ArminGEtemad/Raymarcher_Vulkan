@@ -49,7 +49,7 @@ I wanted to have a demo for my portfolio until Digital Dragons, and I build thes
 ## What is this project NOT?
 
 - A scientific 3D renderer ready to change how humanity think about wave-functions.
-- A triple-AAA engine ready to be used for the next GOATY.
+- A triple-A engine ready to be used for the next GOTY.
 
 ## The "Accidental" Change of the Project Trajectory
 
